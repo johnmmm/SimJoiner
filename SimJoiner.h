@@ -55,6 +55,7 @@ public:
 
     void create_index_ed(const char *filename, unsigned threshold);
     void search_ed(const char *filename, unsigned threshold, vector<EDJoinResult> &result);
+    //上面这两个函数不能用，有bug。。。。
     double jaccard_distance(vector<int> &a, vector<int> &b);
     unsigned lenenshtein_distance(string a, string b, unsigned threshold);
     void print_ed_result(vector<EDJoinResult> &result);
@@ -62,8 +63,7 @@ public:
     int layer = 0, tokens_num = 0, ivt_build = 1;
     vector< vector<int> > token1, token2;//idf表
     vector<int> tokens_used;//
-
-    map<string, int> token_hash;//string和token值对应
+    unordered_map<string, int> token_hash;//string和token值对应
     vector< vector< pair<int, int> > > inverted_list_jar;
     
     vector<unsigned> short_ones;

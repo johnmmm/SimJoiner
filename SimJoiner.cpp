@@ -2,15 +2,12 @@
 
 using namespace std;
 
-// vector<unsigned>* inverted_list_ed_hash[ed_hash];
-// unsigned jac_is_dup[jac_hash];
-
 int *token_place = new int[MAXN];
 int *token_order = new int[MAXN];  //token的顺序
 int *count_filter = new int[MAXN];
 pair<int, int> *token_nums = new pair<int, int>[MAXN];//每个token出现从次数
 vector<string> strs1, strs2;
-map<unsigned long long, vector<int> > new_inverted_list_ed[MAX_LEN+2][MAX_TAU+2];
+unordered_map<unsigned long long, vector<int> > new_inverted_list_ed[MAX_LEN+2][MAX_TAU+2];
 
 
 SimJoiner::SimJoiner() {
@@ -77,24 +74,16 @@ unsigned SimJoiner::short_str_hash(string strs)
 
 void SimJoiner::insert_token(const string& str, vector<int> &res)
 {
-    //printf("insert?\n");
     if(!token_hash.count(str))
     {  
-        //printf("thisone?\n");
         token_hash[str] = tokens_num;
-        //printf("which?\n");
-        //token_hash.insert({str, tokens_num});
         token_nums[tokens_num].second = 1;
-        //printf("which?\n");
         res.emplace_back(tokens_num);
-        //printf("which?\n");
         token_place[tokens_num] = layer;
         tokens_num++;
-        //printf("which?\n");
     }
     else
     {  
-        //printf("thisone??\n");
         auto it = token_hash.find(str);
         if(token_place[it->second] != layer)
         {  
@@ -110,11 +99,9 @@ void SimJoiner::tokenize(string &str1, vector<int> &res)
     res.clear();
 	string::size_type p1, p2;
 	p1 = 0;  p2 = str1.find(" ");
-    //printf("tokenize?\n");
 
 	while(string::npos != p2)
     {
-		//printf("twice?\n");
         if(p1 != p2)
         {
             string tmp = str1.substr(p1, p2-p1);
@@ -136,6 +123,7 @@ void SimJoiner::clear_all_jac()
     token2.clear();
     tokens_used.clear();
     token_hash.clear();
+    token_hash.rehash(MAXN);
 
     memset(token_place, MAXN, sizeof(int));
     memset(token_order, MAXN, sizeof(int));
@@ -158,17 +146,12 @@ void SimJoiner::clear_all_ed()
     strs2.clear();
 
     for (int i = 0; i < MAX_LEN+1; i++)
-    {
         for (int j = 0; j < MAX_TAU+1; j++)
-        {
             new_inverted_list_ed[i][j].clear();
-        }
-    }
 }
 
 int SimJoiner::joinJaccard(const char *filename1, const char *filename2, double threshold, vector<JaccardJoinResult> &result) {
     result.clear();
-    //result.emplace_back((JaccardJoinResult){0, 0, 0.99});
 
     clear_all_jac();
     read_docs(filename1, filename2);
@@ -329,7 +312,6 @@ void SimJoiner::search_ed(const char *filename, unsigned threshold, vector<EDJoi
         }
 
         //计算chosen_one
-
         set<unsigned>::iterator it1;
         for (it1 = chosen_ones.begin(); it1 != chosen_ones.end(); it1++)
         {
@@ -443,9 +425,6 @@ void SimJoiner::read_docs(const char *filename1, const char *filename2)
 
 void SimJoiner::search_jac_new(double threshold, vector<JaccardJoinResult> &result)
 {
-    //int tau_1 = (int)(threshold + 1);
-
-    //printf("read?\n");
     //idf建立
     vector<int> token;
     for (int i = 0; i < strs1.size(); i++)
@@ -472,10 +451,7 @@ void SimJoiner::search_jac_new(double threshold, vector<JaccardJoinResult> &resu
     //     printf("\n");
     // }
 
-    // printf("nums: %d\n", tokens_num);
     sort(token_nums, token_nums+tokens_num, cmp_idf_count);  //get idf
-    // for(int i = 0; i < tokens_num; i++)  
-    //     printf("token_nums:(%d, %d)\n", token_nums[i].first, token_nums[i].second);
     //idf大的放后面，默认相同的后面
     for(int i = 0; i < tokens_num; i++)  
         token_order[token_nums[i].first] = i;
@@ -485,7 +461,6 @@ void SimJoiner::search_jac_new(double threshold, vector<JaccardJoinResult> &resu
     sort_idf(&token2, token_order);
 
     // printf("after sort!!!!\n");
-
     // for (int i = 0; i < token1.size(); i++)
     // {
     //     for (int j = 0; j < token1[i].size(); j++)
@@ -496,7 +471,6 @@ void SimJoiner::search_jac_new(double threshold, vector<JaccardJoinResult> &resu
     // }
 
     //建立前缀倒排列表
-    //printf("here?\n");
     int pre_len = 0;
     double thata = 1-threshold;
     for(int i = 0; i < token2.size(); i++)
@@ -515,7 +489,6 @@ void SimJoiner::search_jac_new(double threshold, vector<JaccardJoinResult> &resu
     }
 
     // //step2 根据共同前缀，挑选候选项
-    // //printf("here?\n");
     double low_th = threshold / (1 + threshold);
     for(unsigned i = 0; i < token1.size(); i++)
     {
@@ -626,8 +599,6 @@ void SimJoiner::search_ed_new(unsigned threshold, vector<EDJoinResult> &result)
                 int undetected_seg = tau-part_idx;
                 // int small_left = p - floor((tau - delta) / 2);
                 // int big_right = p + floor((tau - delta) / 2);
-                left_line = maxone(0, p-(int)threshold);
-                right_line = minone(p+(int)threshold, len-cur_len);
                 // left_line = maxone(0, small_left);
                 // right_line = minone(big_right, len-cur_len);
                 if (j <= len)
@@ -635,7 +606,12 @@ void SimJoiner::search_ed_new(unsigned threshold, vector<EDJoinResult> &result)
                     left_line = maxone(p-part_idx, p+delta-undetected_seg);
                     right_line = minone(p+part_idx, p+delta+undetected_seg);
                 }
-
+                else
+                {
+                    left_line = maxone(0, p-(int)threshold);
+                    right_line = minone(p+(int)threshold, len-cur_len);
+                }
+                
                 for (unsigned k = left_line; k <= right_line; k++)
                 {
                     tmp = strs1[i].substr(k, cur_len);
