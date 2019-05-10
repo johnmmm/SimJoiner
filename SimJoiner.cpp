@@ -385,8 +385,20 @@ void SimJoiner::search_ed_new(unsigned threshold, vector<EDJoinResult> &result)
                 unsigned long long tmp_hash;
                 int left_line = 0;
                 int right_line = len-cur_len;
+                int delta = abs(len-(int)j);
+                int tau = (int)threshold;
+                int undetected_seg = tau-part_idx;
+                // int small_left = p - floor((tau - delta) / 2);
+                // int big_right = p + floor((tau - delta) / 2);
                 left_line = maxone(0, p-(int)threshold);
                 right_line = minone(p+(int)threshold, len-cur_len);
+                // left_line = maxone(0, small_left);
+                // right_line = minone(big_right, len-cur_len);
+                if (j <= len)
+                {
+                    left_line = maxone(p-part_idx, p+delta-undetected_seg);
+                    right_line = minone(p+part_idx, p+delta+undetected_seg);
+                }
 
                 for (unsigned k = left_line; k <= right_line; k++)
                 {
